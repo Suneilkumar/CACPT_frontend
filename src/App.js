@@ -1,7 +1,7 @@
 function App() {
   return (
     <div className='p-2 m-5 flex-1 justify-center items-center'>
-      <h1 className="bg-slate-600 text-6xl font-bold underline text-red-900">
+      <h1 className="bg-slate-200 text-6xl font-bold underline text-red-900">
       Hello world!
       </h1>
 
