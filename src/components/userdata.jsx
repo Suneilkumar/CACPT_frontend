@@ -6,7 +6,7 @@ const UsersList = () => {
 
   // Fetch data on mount
   useEffect(() => {
-    fetch("https://54.152.173.244/api/questions") // example public API
+    fetch("https://api.sunilbasudeo.com/api/questions") // example public API
       .then((response) => response.json())
       .then((data) => {
         setUsers(data);
