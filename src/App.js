@@ -8,6 +8,7 @@ import {
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./components/auth/Home";
 import Home from "./Dashboard";
+import './index.css'
 
 function App() {
   return (
