@@ -26,7 +26,7 @@ const UsersList = () => {
     <div className="p-6 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-4 text-blue-700">User List</h1>
       <ul className="space-y-3">
-        {users.map((user) => (
+        {users.slice(0,10).map((user) => (
           <li
             key={user.id}
             className="p-4 bg-white rounded-xl shadow-md hover:shadow-lg transition"
