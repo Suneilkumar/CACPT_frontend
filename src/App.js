@@ -5,29 +5,27 @@ import {
   SignedOut,
   RedirectToSignIn,
 } from "@clerk/clerk-react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Dashboard from "./components/auth/Home";
-import Home from "./Dashboard";
-import './index.css'
+import { BrowserRouter, Routes, Route} from "react-router-dom";
+import "./index.css";
+import ProtectedLayout from "./components/pages/protectedlayout";
 
-function App() {
+export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Sign In */}
+        {/* ----------- Auth Routes ----------- */}
         <Route
           path="/sign-in/*"
           element={
             <SignIn
               routing="path"
               path="/sign-in"
-              afterSignInUrl="/dashboard"   // 👈 redirect here after login
-              afterSignUpUrl="/dashboard"   // 👈 redirect here after signup
+              afterSignInUrl="/dashboard"
+              afterSignUpUrl="/dashboard"
             />
           }
         />
 
-        {/* Sign Up */}
         <Route
           path="/sign-up/*"
           element={
@@ -40,13 +38,13 @@ function App() {
           }
         />
 
-        {/* Protected route */}
+        {/* ----------- Protected Routes ----------- */}
         <Route
-          path="/dashboard"
+          path="/*"
           element={
             <>
               <SignedIn>
-                <Dashboard />
+                <ProtectedLayout />
               </SignedIn>
               <SignedOut>
                 <RedirectToSignIn />
@@ -54,12 +52,7 @@ function App() {
             </>
           }
         />
-
-        {/* Public home page */}
-        <Route path="/" element={<Home />} />
       </Routes>
     </BrowserRouter>
   );
 }
-
-export default App;
