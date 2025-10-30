@@ -15,7 +15,7 @@ export default function SubjectSelector({ onSelect }) {
         <h1 className="text-3xl font-bold mb-8" style={{color:theme.textPrimary}}>
           Choose a Subject
         </h1>
-       
+        
 
         <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
           {SUBJECTS.map((subject) => (

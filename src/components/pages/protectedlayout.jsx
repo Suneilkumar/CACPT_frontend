@@ -1,11 +1,12 @@
 import { Routes, Route, NavLink } from "react-router-dom";
+import { useClerk, UserProfile } from "@clerk/clerk-react";
 import DashboardPage from "./dashboardpage";
 import QuizPage from "./quizpage";
-import ProfilePage from "../auth/profilepage";
 import theme from "../../utils/theme";
-import { UserProfile } from "@clerk/clerk-react";
 
 export default function ProtectedLayout() {
+  const { signOut } = useClerk();
+
   return (
     <div
       className="min-h-screen flex flex-col"
@@ -16,6 +17,7 @@ export default function ProtectedLayout() {
         className="flex items-center justify-between px-8 py-4 shadow-sm"
         style={{ backgroundColor: theme.surface }}
       >
+        {/* Left side: Navigation links */}
         <div className="flex gap-8">
           <NavLink
             to="/dashboard"
@@ -50,6 +52,14 @@ export default function ProtectedLayout() {
             Profile
           </NavLink>
         </div>
+
+        {/* Right side: Sign Out button */}
+        <button
+          onClick={() => signOut(() => (window.location.href = "/"))}
+          className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition"
+        >
+          Sign out
+        </button>
       </nav>
 
       {/* Page Content */}
