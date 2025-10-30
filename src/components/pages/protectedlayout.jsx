@@ -1,7 +1,9 @@
 import { Routes, Route, NavLink } from "react-router-dom";
 import DashboardPage from "./dashboardpage";
 import QuizPage from "./quizpage";
+import ProfilePage from "../auth/profilepage";
 import theme from "../../utils/theme";
+import { UserProfile } from "@clerk/clerk-react";
 
 export default function ProtectedLayout() {
   return (
@@ -36,6 +38,17 @@ export default function ProtectedLayout() {
           >
             Quiz
           </NavLink>
+
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              `font-medium hover:text-indigo-600 ${
+                isActive ? "text-indigo-600" : "text-gray-700"
+              }`
+            }
+          >
+            Profile
+          </NavLink>
         </div>
       </nav>
 
@@ -44,6 +57,7 @@ export default function ProtectedLayout() {
         <Routes>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/quizpage" element={<QuizPage />} />
+          <Route path="/profile" element={<UserProfile />} />
           <Route path="*" element={<DashboardPage />} />
         </Routes>
       </main>

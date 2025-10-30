@@ -36,20 +36,23 @@ export default function ResultsSummary({ results, total, onRetake }) {
     >
       <motion.div
         className="relative w-[95%] max-w-3xl min-h-[520px]"
-        style={{ transformStyle: "preserve-3d" }}
+        style={{ transformStyle: "preserve-3d"}}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.8, ease: "easeInOut" }}
       >
         {/* FRONT SIDE - Donut Summary */}
         <div
-          className="absolute inset-0 bg-white rounded-2xl shadow-xl flex flex-col items-center justify-center text-center p-6"
+          className="absolute inset-0 rounded-2xl shadow-xl flex flex-col items-center justify-center text-center p-6"
           style={{
+            backgroundColor:theme.surface,
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
             zIndex: flipped ? 0 : 2,
           }}
         >
-          <h1 className="text-2xl font-bold mb-6 text-indigo-700">
+          <h1 className="text-2xl font-bold mb-6"
+          style={{color:theme.primary}}
+          >
             Quiz Completed!
           </h1>
 
@@ -68,7 +71,7 @@ export default function ResultsSummary({ results, total, onRetake }) {
                 cx="100"
                 cy="100"
                 r={radius}
-                stroke="#E5E7EB"
+                stroke={theme.background}
                 strokeWidth="15"
                 fill="none"
               />
@@ -93,9 +96,7 @@ export default function ResultsSummary({ results, total, onRetake }) {
             </div>
           </div>
 
-          <p className="text-gray-600 mb-2">
-            Correct Answers: {correctCount} / {total}
-          </p>
+      
           <p
             className={`text-sm font-medium ${
               scorePercent >= 80
@@ -111,7 +112,8 @@ export default function ResultsSummary({ results, total, onRetake }) {
         
           <p
             onClick={() => setFlipped(true)}
-            className="mt-4 text-indigo-600 text-sm hover:underline cursor-pointer"
+            className="mt-4 text-sm hover:underline cursor-pointer"
+            style={{color:theme.primary}}
           >
             View Detailed Summary ↻
           </p>
@@ -121,12 +123,15 @@ export default function ResultsSummary({ results, total, onRetake }) {
         <div
           className="absolute inset-0 bg-white rounded-2xl shadow-xl overflow-y-auto p-6 text-left"
           style={{
+            backgroundColor: theme.surface,
             transform: "rotateY(180deg)",
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          <h2 className="text-xl font-semibold mb-4 text-indigo-700 text-center">
+          <h2 className="text-xl font-semibold mb-4 text-center"
+          style={{color:theme.primary}}
+          >
             Detailed Review
           </h2>
 
@@ -136,11 +141,12 @@ export default function ResultsSummary({ results, total, onRetake }) {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1 rounded-lg text-sm border ${
-                  filter === f
-                    ? "bg-indigo-600 text-white border-indigo-600"
-                    : "bg-gray-100 border-gray-200 hover:bg-gray-200"
-                }`}
+                className={`px-3 py-1 rounded-lg text-sm border`} 
+                style={{
+                  backgroundColor: filter === f ? theme.primary  : theme.disabled,
+                  color: filter === f ? theme.surface : theme.textSecondary,
+                  
+                }}
               >
                 {f === "all"
                   ? "All"
@@ -194,7 +200,8 @@ export default function ResultsSummary({ results, total, onRetake }) {
           <div className="text-center">
             <p
               onClick={() => setFlipped(false)}
-              className="text-indigo-600 text-sm hover:underline cursor-pointer"
+              className="text-sm hover:underline cursor-pointer"
+              style={{color:theme.primary}}
             >
               ↻ Back to Summary
             </p>
