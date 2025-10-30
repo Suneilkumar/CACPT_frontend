@@ -1,9 +1,13 @@
-import Leaderboard from "./leaderdashboard";
+import LeaderboardPage from "./leaderdashboard";
+
+
+import TestPage from "./test";
 
 export default function DashboardPage() {
   return (
       <div className="flex">
-        <Leaderboard subject="Business Laws"/>
+        <LeaderboardPage />
+        
         
         
       </div>
