@@ -75,7 +75,7 @@ export default function ProtectedLayout() {
               }`
             }
         >
-          Sign out
+          SignOut
         </button>
       </nav>
 
