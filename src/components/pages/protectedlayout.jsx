@@ -24,7 +24,7 @@ export default function ProtectedLayout() {
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
-              `font-medium hover:text-indigo-600 ${
+              `font-sm hover:text-indigo-600 ${
                 isActive ? "text-indigo-600" : "text-gray-700"
               }`
             }
@@ -35,18 +35,18 @@ export default function ProtectedLayout() {
           <NavLink
             to="/dailyprogress"
             className={({ isActive }) =>
-              `font-medium hover:text-indigo-600 ${
+              `font-sm hover:text-indigo-600 ${
                 isActive ? "text-indigo-600" : "text-gray-700"
               }`
             }
           >
-            Daily Progress
+            Progress
           </NavLink>
 
           <NavLink
             to="/quizpage"
             className={({ isActive }) =>
-              `font-medium hover:text-indigo-600 ${
+              `font-sm hover:text-indigo-600 ${
                 isActive ? "text-indigo-600" : "text-gray-700"
               }`
             }
@@ -57,7 +57,7 @@ export default function ProtectedLayout() {
           <NavLink
             to="/profile"
             className={({ isActive }) =>
-              `font-medium hover:text-indigo-600 ${
+              `font-sm hover:text-indigo-600 ${
                 isActive ? "text-indigo-600" : "text-gray-700"
               }`
             }

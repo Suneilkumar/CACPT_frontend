@@ -4,16 +4,15 @@ import theme from "../../utils/theme";
 import { useUser } from "@clerk/clerk-react";
 import Loader from "../utils/loader";
 
-
 export default function LeaderDashboardPage({
   subject: initialSubject = "Overall",
 }) {
   const SUBJECTS = [
-    "Overall",
-    "Accounting",
-    "Business Laws",
-    "Quantitative Aptitude",
-    "Business Economics",
+    { label: "Overall", value: "Overall" },
+    { label: "Accounts", value: "Accounting" },
+    { label: "Law", value: "Business Laws" },
+    { label: "Maths", value: "Quantitative Aptitude" },
+    { label: "Economics", value: "Business Economics" },
   ];
 
   const [leaders, setLeaders] = useState([]);
@@ -56,7 +55,7 @@ export default function LeaderDashboardPage({
 
   const baseScale = Math.min(containerWidth, containerHeight);
   const imgWidth = Math.max(30, Math.min(baseScale * 0.07, 90));
-  const textFontSize = Math.max(10, Math.min(baseScale * 0.03, 16));
+  const textFontSize = Math.max(8, Math.min(baseScale * 0.025, 14));
 
   // Fetch leaderboard data
   useEffect(() => {
@@ -231,28 +230,28 @@ export default function LeaderDashboardPage({
 
         {/* Subject Selector (at bottom) */}
         <div className="flex flex-wrap justify-center gap-1 mt-2 pb-2">
-          {SUBJECTS.map((subj) => (
+          {SUBJECTS.map(({ label, value }) => (
             <label
-              key={subj}
-              className="flex items-center gap-2 cursor-pointer px-3 py-1 rounded-full border transition-all"
+              key={value}
+              className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded-full border transition-all"
               style={{
                 backgroundColor:
-                  subject === subj ? theme.primary : theme.surface,
+                  subject === value ? theme.primary : theme.surface,
                 borderColor:
-                  subject === subj ? theme.primary : theme.greydisabled,
+                  subject === value ? theme.primary : theme.greydisabled,
                 color:
-                  subject === subj ? theme.textSecondary : theme.textPrimary,
+                  subject === value ? theme.textSecondary : theme.textPrimary,
               }}
             >
               <input
                 type="radio"
                 name="subject"
-                value={subj}
-                checked={subject === subj}
-                onChange={() => setSubject(subj)}
+                value={value}
+                checked={subject === value}
+                onChange={() => setSubject(value)}
                 className="hidden"
               />
-              <span className="text-sm font-medium">{subj}</span>
+              <span className="text-xs font-normal">{label}</span>
             </label>
           ))}
         </div>
