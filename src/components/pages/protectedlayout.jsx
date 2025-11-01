@@ -1,8 +1,10 @@
 import { Routes, Route, NavLink } from "react-router-dom";
 import { useClerk, UserProfile } from "@clerk/clerk-react";
-import DashboardPage from "./dashboardpage";
 import QuizPage from "./quizpage";
 import theme from "../../utils/theme";
+import DailyProgressPage from "./dailyprogresspage";
+import LeaderDashboardPage from "./leaderdashboardpage";
+import ProfilePage from "./profilepage";
 
 export default function ProtectedLayout() {
   const { signOut } = useClerk();
@@ -31,6 +33,17 @@ export default function ProtectedLayout() {
           </NavLink>
 
           <NavLink
+            to="/dailyprogress"
+            className={({ isActive }) =>
+              `font-medium hover:text-indigo-600 ${
+                isActive ? "text-indigo-600" : "text-gray-700"
+              }`
+            }
+          >
+            Daily Progress
+          </NavLink>
+
+          <NavLink
             to="/quizpage"
             className={({ isActive }) =>
               `font-medium hover:text-indigo-600 ${
@@ -56,7 +69,11 @@ export default function ProtectedLayout() {
         {/* Right side: Sign Out button */}
         <button
           onClick={() => signOut(() => (window.location.href = "/"))}
-          className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition"
+          className={({ isActive }) =>
+              `font-medium hover:text-indigo-600 ${
+                isActive ? "text-indigo-600" : "text-gray-700"
+              }`
+            }
         >
           Sign out
         </button>
@@ -65,10 +82,11 @@ export default function ProtectedLayout() {
       {/* Page Content */}
       <main className="flex-1">
         <Routes>
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<LeaderDashboardPage />} />
+          <Route path="/dailyprogress" element={<DailyProgressPage />} />
           <Route path="/quizpage" element={<QuizPage />} />
-          <Route path="/profile" element={<UserProfile />} />
-          <Route path="*" element={<DashboardPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="*" element={<LeaderDashboardPage />} />
         </Routes>
       </main>
     </div>

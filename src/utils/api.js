@@ -67,3 +67,65 @@ export function saveQuizResults({ user, results }) {
     return data.leaderboard || [];
   }
   
+  console.log(
+    "FetchQuizSummary →",
+    JSON.stringify(await fetchQuizSummary(), null, 2)
+  );
+
+  // Summarizes all users' daily subject data, filtered by userId
+  export function summarizeByDateAndSubject(summaryArray, userId) {
+    const filtered = summaryArray.filter((d) => d.user_id === userId);
+    const result = {};
+  
+    filtered.forEach((entry) => {
+      const dateKey = entry.date;
+      if (!result[dateKey]) result[dateKey] = {};
+  
+      let totalCorrect = 0;
+      let totalAttempts = 0;
+      let totalTime = 0;
+  
+      entry.subjects.forEach((sub) => {
+        const subjectName = sub.subject || "Unknown Subject";
+        const lastAttemptTime = sub.chapters?.[0]?.last_attempt_time || entry.last_attempt_time;
+  
+        if (!result[dateKey][subjectName]) {
+          result[dateKey][subjectName] = {
+            accuracy: Math.round(sub.accuracy || 0),
+            total: sub.total_attempts || 0,
+            correct: sub.total_correct || 0,
+            avgTime: +(sub.avg_time_sec || 0).toFixed(2),
+            attempts: 1,
+            times: [lastAttemptTime],
+          };
+        } else {
+          // handle multiple sessions on the same day
+          const s = result[dateKey][subjectName];
+          s.correct += sub.total_correct || 0;
+          s.total += sub.total_attempts || 0;
+          s.avgTime = +(s.avgTime + sub.avg_time_sec) / 2;
+          s.accuracy = Math.round((s.correct / s.total) * 100);
+          s.attempts += 1;
+          s.times.push(lastAttemptTime);
+        }
+  
+        totalCorrect += sub.total_correct || 0;
+        totalAttempts += sub.total_attempts || 0;
+        totalTime += sub.total_time || 0;
+      });
+  
+      // Create "Overall" aggregate
+      if (totalAttempts > 0) {
+        const overallAcc = Math.round((totalCorrect / totalAttempts) * 100);
+        result[dateKey]["Overall"] = {
+          accuracy: overallAcc,
+          total: totalAttempts,
+          correct: totalCorrect,
+          avgTime: +(totalTime / totalAttempts).toFixed(2),
+        };
+      }
+    });
+  
+    return result;
+  }
+  

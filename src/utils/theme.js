@@ -9,6 +9,8 @@ const theme = {
     border: '#E5E7EB',       // soft border gray
     error: '#EF4444',        // red for errors/wrong answers
     disabled: "#BA68C8",  
+    transparent: "#F4E575",
+    greydisabled: '#E5E7EB'
   };
 
 export default theme;

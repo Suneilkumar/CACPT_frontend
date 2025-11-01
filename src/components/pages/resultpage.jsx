@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import theme from "../../utils/theme";
+import Lottie from "lottie-react";
+import celebration from "../../assets/trophy.json";
 
 export default function ResultsSummary({ results, total, onRetake }) {
   const correctCount = results.filter((r) => r.isCorrect).length;
@@ -36,7 +38,7 @@ export default function ResultsSummary({ results, total, onRetake }) {
     >
       <motion.div
         className="relative w-[95%] max-w-3xl min-h-[520px]"
-        style={{ transformStyle: "preserve-3d"}}
+        style={{ transformStyle: "preserve-3d" }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.8, ease: "easeInOut" }}
       >
@@ -44,14 +46,15 @@ export default function ResultsSummary({ results, total, onRetake }) {
         <div
           className="absolute inset-0 rounded-2xl shadow-xl flex flex-col items-center justify-center text-center p-6"
           style={{
-            backgroundColor:theme.surface,
+            backgroundColor: theme.surface,
             backfaceVisibility: "hidden",
             WebkitBackfaceVisibility: "hidden",
             zIndex: flipped ? 0 : 2,
           }}
         >
-          <h1 className="text-2xl font-bold mb-6"
-          style={{color:theme.primary}}
+          <h1
+            className="text-2xl font-bold mb-6"
+            style={{ color: theme.primary }}
           >
             Quiz Completed!
           </h1>
@@ -92,11 +95,9 @@ export default function ResultsSummary({ results, total, onRetake }) {
               <span className="text-4xl font-bold text-gray-800">
                 {scorePercent}%
               </span>
-              
             </div>
           </div>
 
-      
           <p
             className={`text-sm font-medium ${
               scorePercent >= 80
@@ -105,15 +106,23 @@ export default function ResultsSummary({ results, total, onRetake }) {
                 ? "text-amber-600"
                 : "text-red-600"
             }`}
-          >
-            
-          </p>
+          ></p>
 
-        
+          {scorePercent > 70 && (
+            <motion.div
+              className="w-32 h-32 mb-2"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <Lottie animationData={celebration} loop={false} />
+            </motion.div>
+          )}
+
           <p
             onClick={() => setFlipped(true)}
             className="mt-4 text-sm hover:underline cursor-pointer"
-            style={{color:theme.primary}}
+            style={{ color: theme.primary }}
           >
             View Detailed Summary ↻
           </p>
@@ -129,8 +138,9 @@ export default function ResultsSummary({ results, total, onRetake }) {
             WebkitBackfaceVisibility: "hidden",
           }}
         >
-          <h2 className="text-xl font-semibold mb-4 text-center"
-          style={{color:theme.primary}}
+          <h2
+            className="text-xl font-semibold mb-4 text-center"
+            style={{ color: theme.primary }}
           >
             Detailed Review
           </h2>
@@ -141,11 +151,11 @@ export default function ResultsSummary({ results, total, onRetake }) {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-3 py-1 rounded-lg text-sm border`} 
+                className={`px-3 py-1 rounded-lg text-sm border`}
                 style={{
-                  backgroundColor: filter === f ? theme.primary  : theme.disabled,
+                  backgroundColor:
+                    filter === f ? theme.primary : theme.disabled,
                   color: filter === f ? theme.surface : theme.textSecondary,
-                  
                 }}
               >
                 {f === "all"
@@ -190,7 +200,9 @@ export default function ResultsSummary({ results, total, onRetake }) {
                   </div>
                   <div className="mb-1">
                     <span className="font-semibold">Correct answer:</span>{" "}
-                    <span className="text-green-700">{r.correctAnswerText}</span>
+                    <span className="text-green-700">
+                      {r.correctAnswerText}
+                    </span>
                   </div>
                 </div>
               ))
@@ -201,7 +213,7 @@ export default function ResultsSummary({ results, total, onRetake }) {
             <p
               onClick={() => setFlipped(false)}
               className="text-sm hover:underline cursor-pointer"
-              style={{color:theme.primary}}
+              style={{ color: theme.primary }}
             >
               ↻ Back to Summary
             </p>
