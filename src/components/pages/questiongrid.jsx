@@ -256,7 +256,7 @@ export default function QuestionGrid({ questions, onBack }) {
                   }}
                   className={`
                     w-full border rounded-lg px-3 py-2 mb-2 text-left
-                    transition-all duration-200
+                    transition-all duration-200  text-slate-800
                     ${
                       selectedIndex === idx
                         ? "border-indigo-500 bg-indigo-50 text-indigo-700"
