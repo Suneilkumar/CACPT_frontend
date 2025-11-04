@@ -1,51 +1,68 @@
 import { CHAPTERS } from "../../constants";
-import theme from "../../utils/theme";
+import { motion } from "framer-motion";
+import AnimatedPageWrapper from "../../components/utils/animatedpagewrapper";
 
-export default function ChapterSelector({ subject, onSelectChapter }) {
+export default function ChapterSelector({ subject, onSelectChapter, onBack }) {
   const chapters = CHAPTERS[subject.name] || [];
 
-  return (
-    <div
-      className="flex flex-col items-center justify-center min-h-screen px-6"
-      style={{ backgroundColor: theme.background }}
-    >
-      <div className="max-w-2xl w-full text-center">
-        <h1 className="text-2xl font-bold mb-6"
-        style={{color:theme.textPrimary}}
-        >
-          {subject.name}
-        </h1>
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.9 },
+    visible: (i) => ({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { delay: i * 0.08, type: "spring", stiffness: 80 },
+    }),
+  };
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {chapters.map((chapter) => (
-            <button
+  return (
+    <AnimatedPageWrapper
+      title={subject.name}
+      subtitle="Select a chapter to begin"
+      onBack={onBack}
+    >
+      {/* Centered layout wrapper */}
+      <div className="flex flex-col items-center justify-center min-h-[80vh] w-full">
+        <div
+          className="
+            grid gap-6
+            grid-cols-1 sm:grid-cols-2 md:grid-cols-3
+            w-full max-w-5xl justify-items-center
+          "
+        >
+          {chapters.map((chapter, idx) => (
+            <motion.button
               key={chapter.id}
+              custom={idx}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              whileHover={{
+                scale: 1.05,
+                boxShadow: "0 0 25px rgba(99,102,241,0.35)",
+              }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => onSelectChapter(chapter)}
-              className="p-4 rounded-2xl shadow hover:shadow-lg border transition-transform transform hover:-translate-y-1"
-              style={{color: theme.textPrimary,
-              backgroundColor: theme.surface,
-              borderColor: theme.border,
-              boxShadow: `0 4px 10px ${theme.primary}11`}} 
+              className="
+                relative w-full max-w-[260px] p-5 rounded-2xl text-white text-left
+                bg-gradient-to-br from-indigo-500/20 via-slate-700/40 to-slate-800/60
+                border border-slate-700 backdrop-blur-md
+                transition-all duration-300
+                hover:from-indigo-600/25 hover:to-slate-700/70
+                hover:border-indigo-400 hover:shadow-indigo-400/20
+                shadow-md
+              "
             >
-              <div className="text-left text-base font-normal"
-              style={{color:theme.textPrimary}}
-              >
-                {chapter.name}
-              </div>
-              
-            </button>
+              <h2 className="text-lg font-semibold mb-1">{chapter.name}</h2>
+              {chapter.description && (
+                <p className="text-slate-400 text-sm line-clamp-2">
+                  {chapter.description}
+                </p>
+              )}
+            </motion.button>
           ))}
         </div>
-
-        {/* Optional: Back button */}
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-6 px-4 py-2 rounded-lg hover:bg-gray-300"
-          style = {{backgroundColor:theme.primary, color: theme.textSecondary}}
-        >
-          Back to Subjects
-        </button>
       </div>
-    </div>
+    </AnimatedPageWrapper>
   );
 }

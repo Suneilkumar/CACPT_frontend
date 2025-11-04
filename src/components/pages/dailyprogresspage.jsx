@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from "react";
-import theme from "../../utils/theme";
-import { fetchQuizSummary, summarizeByDateAndSubject } from "../../utils/api";
+import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/clerk-react";
-import Loader from "../utils/loader";
+import { CalendarDays } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
-const daysInMonth = (year, month) => new Date(year, month, 0).getDate();
+import { fetchQuizSummary, summarizeByDateAndSubject } from "../../utils/api";
+import Loader from "../utils/loader";
 
 const SUBJECTS = [
   { label: "Overall", value: "Overall" },
@@ -14,64 +23,29 @@ const SUBJECTS = [
   { label: "Economics", value: "Business Economics" },
 ];
 
-export default function DailyProgressPage({
-  subject: initialSubject = "Overall",
-  initialYear = 2025,
-  minYear = 2025,
-  maxYear = 2030,
-}) {
+const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
+
+export default function DailyProgressPage({ initialYear = 2025 }) {
   const { user } = useUser();
   const [year, setYear] = useState(initialYear);
+  const [subject, setSubject] = useState("Overall");
   const [performance, setPerformance] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [subject, setSubject] = useState(initialSubject);
+  const [width, setWidth] = useState(window.innerWidth);
 
-  const [dimensions, setDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
+  const isMobile = width < 768;
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
   useEffect(() => {
-    const handleResize = () =>
-      setDimensions({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const { width, height } = dimensions;
-  const isPortrait = width < height;
-
-  // Responsive container sizing
-  let containerWidth, containerHeight;
-
-  if (width < 640) {
-    containerWidth = width * 0.95;
-    containerHeight = height * 0.75;
-  } else if (width < 1024) {
-    containerWidth = isPortrait ? width * 0.9 : width * 0.75;
-    containerHeight = isPortrait ? height * 0.7 : height * 0.8;
-  } else {
-    containerWidth = Math.min(width * 0.7, 1200);
-    containerHeight = Math.min(height * 0.8, 750);
-  }
-
-  containerWidth = Math.max(300, Math.min(containerWidth, 1200));
-  containerHeight = Math.max(400, Math.min(containerHeight, 800));
-
-  const baseScale = Math.min(containerWidth, containerHeight);
-  const cellWidth = Math.max(4, Math.min(baseScale * 0.025, 30));
-  const gap = Math.max(1, Math.min(baseScale * 0.0025, 4));
-  const cellHeight = Math.max(8, Math.min(baseScale * 0.075, 25));
-  const rowGap = Math.max(1, Math.min(baseScale * 0.025, 6));
-  const labelSpace = Math.max(15, Math.min(baseScale * 0.06, 40));
-  const fontSize = Math.max(5, Math.min(baseScale * 0.04, 12));
-
-  const months = Array.from({ length: 12 }, (_, m) => m + 1);
-
   useEffect(() => {
-    async function loadPerformance() {
+    async function loadData() {
       if (!user) return;
       try {
         setLoading(true);
@@ -85,210 +59,290 @@ export default function DailyProgressPage({
         setLoading(false);
       }
     }
-    loadPerformance();
+    loadData();
   }, [user]);
 
+  const colorScale = (accuracy) => {
+    if (accuracy == null) return "#334155";
+    if (accuracy >= 75) return "#22c55e";
+    if (accuracy >= 50) return "#eab308";
+    return "#ef4444";
+  };
+
+  const chartData = Object.entries(performance)
+    .map(([date, subj]) => ({
+      date,
+      accuracy: subj[subject]?.accuracy ?? null,
+    }))
+    .filter((d) => d.accuracy != null)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <div
-        className="relative flex flex-col justify-between rounded-3xl shadow-xl p-6"
-        style={{
-          backgroundColor: theme.surface,
-          width: containerWidth,
-          height: containerHeight,
-        }}
-      >
-        {/* Loader overlay */}
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-3xl z-10">
-            <Loader message="Loading performance..." center size={42} />
+    <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white py-10 px-4">
+      {/* Header */}
+      <div className="w-full max-w-6xl flex flex-col sm:flex-row justify-between items-center mb-10 gap-4">
+        <div className="flex items-center gap-3">
+          <CalendarDays size={36} className="text-indigo-400" />
+          <div>
+            <h1 className="text-3xl font-bold">Progress Calendar</h1>
+            <p className="text-sm text-slate-400">
+              {year} — Visual summary of your quiz performance
+            </p>
           </div>
-        )}
+        </div>
 
-        {/* Error message */}
-        {!loading && error && (
-          <div className="flex flex-col items-center justify-center py-5">
-            <p className="text-red-500 font-medium">Failed to load data</p>
-            <p className="text-xs text-gray-500 mt-1">{error.message}</p>
-          </div>
-        )}
+        {/* Subject selector */}
+        <div className="flex flex-wrap justify-center gap-2">
+          {SUBJECTS.map(({ label, value }) => (
+            <motion.button
+              key={value}
+              whileHover={{ scale: 1.05 }}
+              onClick={() => setSubject(value)}
+              className={`px-3 py-1.5 text-sm rounded-full border transition-all ${
+                subject === value
+                  ? "bg-indigo-600 border-indigo-400 text-white shadow-md"
+                  : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+              }`}
+            >
+              {label}
+            </motion.button>
+          ))}
+        </div>
+      </div>
 
-        {/* Main content */}
+      {/* Loader / Error */}
+      {loading && (
+        <div className="flex justify-center items-center min-h-[50vh]">
+          <Loader message="Loading performance data..." size={48} />
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="text-red-400 mt-8 text-center">
+          Failed to load data: {error.message}
+        </div>
+      )}
+
+      {/* Calendar + Chart Layout */}
+      {!loading && !error && (
         <div
-          className={`flex-1 flex flex-col items-center justify-center transition-opacity ${
-            loading ? "opacity-30 pointer-events-none" : ""
-          }`}
+          className={`w-full max-w-6xl flex ${
+            isMobile ? "flex-col items-center" : "flex-row justify-between"
+          } gap-10`}
         >
-          {/* Header */}
-          <p
-            className="text-xl sm:text-2xl md:text-3xl font-semibold mb-6 text-center"
-            style={{ color: theme.primary }}
+          {/* Calendar */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="flex flex-col items-center"
           >
-            Daily Summary of attempts taken in {year}
-          </p>
-          {/* Clarification subtitle */}
-
-          {/* Heatmap container */}
-          <div className="flex-1 flex items-center justify-center">
             <svg
-              width={labelSpace + 31 * (cellWidth + gap)}
-              height={months.length * (cellHeight + rowGap)}
-              role="img"
-              aria-label={`${subject} performance heatmap for ${year}`}
+              width={isMobile ? width * 0.95 : 600}
+              height={isMobile ? 580 : 420}
+              viewBox={`0 0 ${isMobile ? width * 0.95 : 600} ${isMobile ? 580 : 420}`}
             >
               {months.map((month, rowIdx) => {
-                const monthStr = String(month).padStart(2, "0");
-                const totalDays = daysInMonth(year, month);
-                const labelY = rowIdx * (cellHeight + rowGap) + cellHeight / 2;
+                const days = getDaysInMonth(year, month);
+                const monthLabel = new Date(year, month - 1).toLocaleString(
+                  "en",
+                  { month: "short" }
+                );
+                const y = rowIdx * (isMobile ? 45 : 32) + 30;
 
                 return (
-                  <g key={`${year}-${month}`}>
+                  <g key={month}>
+                    {/* Month label */}
                     <text
-                      x={0}
-                      y={labelY}
-                      fontSize={fontSize}
-                      fill={theme.primary}
-                      fontFamily="sans-serif"
+                      x={10}
+                      y={y + 8}
+                      fill="#e2e8f0"
+                      fontSize={isMobile ? 11 : 12}
+                      fontFamily="Inter, sans-serif"
                       dominantBaseline="middle"
-                      
+                      textAnchor="start"
                     >
-                      {`${new Date(year, month - 1).toLocaleString("en", {
-                        month: "short",
-                      })}→`}
+                      {monthLabel}
                     </text>
 
-                    {Array.from({ length: totalDays }, (_, dayIdx) => {
-                      const day = String(dayIdx + 1).padStart(2, "0");
-                      const dateKey = `${year}-${monthStr}-${day}`;
-                      const subjectStats = performance[dateKey]?.[subject];
-                      const accuracy = subjectStats?.accuracy;
-
-                      let color = theme.background;
-                      if (accuracy != null) {
-                        if (accuracy >= 75) color = "#22c55e";
-                        else if (accuracy >= 50) color = "#eab308";
-                        else color = "#ef4444";
-                      }
-
+                    {/* Days row */}
+                    {Array.from({ length: days }, (_, d) => {
+                      const day = String(d + 1).padStart(2, "0");
+                      const dateKey = `${year}-${String(month).padStart(
+                        2,
+                        "0"
+                      )}-${day}`;
+                      const stats = performance[dateKey]?.[subject];
+                      const accuracy = stats?.accuracy;
                       return (
-                        <rect
+                        <motion.rect
                           key={dateKey}
-                          x={labelSpace + dayIdx * (cellWidth + gap)}
-                          y={rowIdx * (cellHeight + rowGap)}
-                          width={cellWidth}
-                          height={cellHeight}
-                          rx={0.5}
-                          fill={color}
-                          className="cursor-pointer"
-                          onClick={() => {
-                            if (performance[dateKey]) setSelectedDate(dateKey);
+                          x={60 + d * (isMobile ? 9.2 : 10.5)}
+                          y={y+2}
+                          width={isMobile ? 8.5 : 9.5}
+                          height={isMobile ? 8.5 : 9.5}
+                          rx={2}
+                          fill={colorScale(accuracy)}
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{
+                            delay: d * 0.01 + rowIdx * 0.05,
+                            duration: 0.2,
                           }}
+                          style={{ cursor: stats ? "pointer" : "default" }}
+                          onClick={() => stats && setSelectedDate(dateKey)}
                         >
                           <title>
-                            {subjectStats
-                              ? `${dateKey}: ${subjectStats.correct}/${subjectStats.total} correct — ${accuracy}%`
+                            {stats
+                              ? `${dateKey}: ${stats.correct}/${stats.total} correct (${accuracy}%)`
                               : `${dateKey}: No attempts`}
                           </title>
-                        </rect>
+                        </motion.rect>
                       );
                     })}
                   </g>
                 );
               })}
             </svg>
-          </div>
 
-          {/* Subject selector at bottom */}
-          <div className="flex flex-wrap justify-center gap-1 mt-2 pb-2">
-            {SUBJECTS.map(({ label, value }) => (
-              <label
-                key={value}
-                className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded-full border transition-all"
-                style={{
-                  backgroundColor:
-                    subject === value ? theme.primary : theme.surface,
-                  borderColor:
-                    subject === value ? theme.primary : theme.greydisabled,
-                  color:
-                    subject === value ? theme.textSecondary : theme.textPrimary,
-                }}
-              >
-                <input
-                  type="radio"
-                  name="subject"
-                  value={value}
-                  checked={subject === value}
-                  onChange={() => setSubject(value)}
-                  className="hidden"
-                />
-                <span className="text-xs font-normal">{label}</span>
-              </label>
-            ))}
-          </div>
+            {/* Legend */}
+            <div className="mt-8 flex flex-wrap justify-center items-center gap-3 text-xs text-slate-400">
+              <span>No attempts</span>
+              <div className="w-4 h-4 rounded bg-slate-700" />
+              <span>Low</span>
+              <div className="w-4 h-4 rounded bg-red-500" />
+              <span>Medium</span>
+              <div className="w-4 h-4 rounded bg-yellow-400" />
+              <span>High</span>
+              <div className="w-4 h-4 rounded bg-green-500" />
+            </div>
+          </motion.div>
+
+          {/* Accuracy Line Chart */}
+          <motion.div
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className={`${
+              isMobile ? "w-full max-w-md mt-8" : "flex-1"
+            } bg-slate-800/50 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-lg`}
+          >
+            <h2 className="text-lg font-semibold text-indigo-400 mb-2 text-center">
+              Accuracy Trend
+            </h2>
+            {chartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={isMobile ? 220 : 280}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: "#94a3b8" }}
+                    tickFormatter={(v) => v.slice(5)}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "#94a3b8" }}
+                    domain={[0, 100]}
+                    ticks={[0, 25, 50, 75, 100]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#1e293b",
+                      border: "1px solid #475569",
+                      borderRadius: "6px",
+                    }}
+                    labelStyle={{ color: "#e2e8f0" }}
+                    itemStyle={{ color: "#38bdf8" }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="accuracy"
+                    stroke="#6366f1"
+                    strokeWidth={2.5}
+                    dot={{ r: 2.5, fill: "#a5b4fc" }}
+                    activeDot={{ r: 5, fill: "#818cf8" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-slate-400 text-sm mt-6">
+                No performance data available yet.
+              </p>
+            )}
+          </motion.div>
         </div>
+      )}
 
-        {/* Modal for daily detail */}
+      {/* Modal */}
+      <AnimatePresence>
         {selectedDate && (
-          <div
-            className="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
             onClick={() => setSelectedDate(null)}
           >
-            <div
-              className="rounded-2xl shadow-lg p-6 w-80 max-h-[80vh] overflow-y-auto"
-              style={{ backgroundColor: theme.surface }}
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
+              className="bg-slate-800/90 backdrop-blur-xl border border-slate-700 rounded-2xl p-6 w-80 max-h-[80vh] overflow-y-auto shadow-2xl"
             >
-              <h2 className="text-lg font-semibold mb-2 text-center">
+              <h2 className="text-lg font-semibold text-indigo-400 mb-3 text-center">
                 {selectedDate}
               </h2>
 
               <div className="space-y-2">
                 {subject === "Overall"
                   ? Object.entries(performance[selectedDate] || {})
-                      .filter(([sub]) => sub !== "Overall")
-                      .map(([sub, stats]) => (
-                        <div key={sub} className="border-b pb-1">
+                      .filter(([s]) => s !== "Overall")
+                      .map(([s, stats]) => (
+                        <div
+                          key={s}
+                          className="p-2 border border-slate-700 rounded-lg bg-slate-900/50"
+                        >
                           <div className="flex justify-between items-center">
-                            <p className="font-medium text-sm">{sub}</p>
+                            <p className="text-sm font-medium">{s}</p>
                             <span
                               className={`text-sm font-semibold ${
                                 stats.accuracy >= 75
-                                  ? "text-green-600"
+                                  ? "text-green-400"
                                   : stats.accuracy >= 50
-                                  ? "text-yellow-600"
-                                  : "text-red-600"
+                                  ? "text-yellow-400"
+                                  : "text-red-400"
                               }`}
                             >
                               {stats.accuracy}%
                             </span>
                           </div>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-slate-400 mt-1">
                             {stats.correct}/{stats.total} correct •{" "}
                             {stats.avgTime}s avg
                           </p>
                         </div>
                       ))
                   : performance[selectedDate]?.[subject] && (
-                      <div className="border-b pb-1">
+                      <div className="p-2 border border-slate-700 rounded-lg bg-slate-900/50">
                         {(() => {
                           const stats = performance[selectedDate][subject];
                           return (
                             <>
                               <div className="flex justify-between items-center">
-                                <p className="font-medium text-sm">{subject}</p>
+                                <p className="text-sm font-medium">{subject}</p>
                                 <span
                                   className={`text-sm font-semibold ${
                                     stats.accuracy >= 75
-                                      ? "text-green-600"
+                                      ? "text-green-400"
                                       : stats.accuracy >= 50
-                                      ? "text-yellow-600"
-                                      : "text-red-600"
+                                      ? "text-yellow-400"
+                                      : "text-red-400"
                                   }`}
                                 >
                                   {stats.accuracy}%
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-slate-400 mt-1">
                                 {stats.correct}/{stats.total} correct •{" "}
                                 {stats.avgTime}s avg
                               </p>
@@ -299,17 +353,17 @@ export default function DailyProgressPage({
                     )}
               </div>
 
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                className="mt-4 w-full text-white text-sm py-2 rounded-md bg-indigo-600 hover:bg-indigo-700"
                 onClick={() => setSelectedDate(null)}
-                className="mt-4 w-full text-white text-sm py-1 rounded-md hover:bg-blue-600"
-                style={{ backgroundColor: theme.primary }}
               >
                 Close
-              </button>
-            </div>
-          </div>
+              </motion.button>
+            </motion.div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 }

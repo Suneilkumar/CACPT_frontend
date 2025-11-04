@@ -2,6 +2,8 @@ import { useState } from "react";
 import SubjectSelector from "./subjectselector";
 import ChapterSelector from "./chapterselector";
 import QuestionGrid from "./questiongrid";
+import AnimatedPageWrapper from "../../components/utils/animatedpagewrapper";
+import { motion } from "framer-motion";
 
 export default function QuizPage() {
   const [subject, setSubject] = useState(null);
@@ -10,7 +12,7 @@ export default function QuizPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fisher-Yates shuffle
+  // Fisher–Yates shuffle (unchanged)
   const shuffleArray = (array) => {
     const arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -20,6 +22,7 @@ export default function QuizPage() {
     return arr;
   };
 
+  // Fetch & handle chapter selection
   const handleChapterSelect = async (chapter) => {
     try {
       setLoading(true);
@@ -41,7 +44,7 @@ export default function QuizPage() {
 
       // Shuffle before storing
       const shuffled = shuffleArray(data.items || []);
-      setQuestions(shuffled.slice(0,10));
+      setQuestions(shuffled.slice(0, 10));
     } catch (err) {
       console.error("Failed to fetch questions:", err);
       setError(err.message || "Failed to load questions.");
@@ -50,43 +53,94 @@ export default function QuizPage() {
     }
   };
 
+  // Navigation hierarchy
   if (!subject)
     return <SubjectSelector onSelect={(selectedSubject) => setSubject(selectedSubject)} />;
 
   if (subject && !chapter)
-    return <ChapterSelector subject={subject} onSelectChapter={(selectedChapter) => handleChapterSelect(selectedChapter)} />;
+    return (
+      <ChapterSelector
+        subject={subject}
+        onSelectChapter={(selectedChapter) => handleChapterSelect(selectedChapter)}
+        onBack={() => setSubject(null)}
+      />
+    );
 
+  // Loading state (modernized)
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        Loading questions for {subject.shortID} → {chapter.shortID}...
-      </div>
+      <AnimatedPageWrapper
+        title="Loading Questions..."
+        subtitle={`${subject.shortID || subject.name} → ${chapter?.shortID || chapter?.name}`}
+        onBack={() => setChapter(null)}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="flex items-center justify-center w-full h-[60vh]"
+        >
+          <div className="animate-pulse text-slate-300 text-lg font-medium">
+            Fetching questions...
+          </div>
+        </motion.div>
+      </AnimatedPageWrapper>
     );
 
+  // Error state (modernized)
   if (error)
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-red-600">
-        <p className="mb-4 font-semibold">❌ {error}</p>
-        <button
-          onClick={() => handleChapterSelect(chapter)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-        >
-          Retry
-        </button>
-      </div>
+      <AnimatedPageWrapper
+        title="Something went wrong 😕"
+        subtitle={`${subject.name} → ${chapter.name}`}
+        onBack={() => setChapter(null)}
+      >
+        <div className="flex flex-col items-center justify-center text-center">
+          <p className="text-red-400 text-lg font-semibold mb-4">{error}</p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleChapterSelect(chapter)}
+            className="
+              px-5 py-2 rounded-full
+              bg-indigo-600 text-white font-medium
+              hover:bg-indigo-700 transition-all duration-300
+            "
+          >
+            Retry
+          </motion.button>
+        </div>
+      </AnimatedPageWrapper>
     );
 
-  if (questions.length > 0) return <QuestionGrid questions={questions} />;
+  // Loaded questions
+  if (questions.length > 0)
+    return <QuestionGrid questions={questions} onBack={() => setChapter(null)} />;
 
+  // No questions found
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen text-gray-600">
-      <p>No questions found for {subject.shortID} → {chapter.shortID}.</p>
-      <button
-        onClick={() => setChapter(null)}
-        className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-      >
-        ⬅ Back to Chapters
-      </button>
-    </div>
+    <AnimatedPageWrapper
+      title="No Questions Found"
+      subtitle={`${subject.name} → ${chapter.name}`}
+      onBack={() => setChapter(null)}
+    >
+      <div className="flex flex-col items-center justify-center text-center">
+        <p className="text-slate-300 mb-4">
+          No questions available for this chapter yet.
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setChapter(null)}
+          className="
+            mt-2 px-5 py-2 bg-slate-700 text-slate-300 rounded-full
+            border border-slate-600 hover:bg-slate-600 hover:text-white
+            transition-all duration-300
+          "
+        >
+          ⬅ Back to Chapters
+        </motion.button>
+      </div>
+    </AnimatedPageWrapper>
   );
 }

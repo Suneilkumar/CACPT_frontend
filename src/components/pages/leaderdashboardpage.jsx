@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { fetchLeaderboard } from "../../utils/api";
-import theme from "../../utils/theme";
 import { useUser } from "@clerk/clerk-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Crown } from "lucide-react";
 import Loader from "../utils/loader";
+import AnimatedPageWrapper from "../../components/utils/animatedpagewrapper";
 
 export default function LeaderDashboardPage({
   subject: initialSubject = "Overall",
+  onBack,
 }) {
   const SUBJECTS = [
     { label: "Overall", value: "Overall" },
@@ -21,43 +24,6 @@ export default function LeaderDashboardPage({
   const [subject, setSubject] = useState(initialSubject);
   const { user } = useUser();
 
-  const [dimensions, setDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-
-  useEffect(() => {
-    const handleResize = () =>
-      setDimensions({ width: window.innerWidth, height: window.innerHeight });
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const { width, height } = dimensions;
-  const isPortrait = width < height;
-
-  // Responsive container sizing
-  let containerWidth, containerHeight;
-
-  if (width < 640) {
-    containerWidth = width * 0.95;
-    containerHeight = height * 0.75;
-  } else if (width < 1024) {
-    containerWidth = isPortrait ? width * 0.9 : width * 0.75;
-    containerHeight = isPortrait ? height * 0.7 : height * 0.8;
-  } else {
-    containerWidth = Math.min(width * 0.7, 1200);
-    containerHeight = Math.min(height * 0.8, 750);
-  }
-
-  containerWidth = Math.max(280, Math.min(containerWidth, 1200));
-  containerHeight = Math.max(400, Math.min(containerHeight, 800));
-
-  const baseScale = Math.min(containerWidth, containerHeight);
-  const imgWidth = Math.max(30, Math.min(baseScale * 0.07, 90));
-  const textFontSize = Math.max(8, Math.min(baseScale * 0.025, 14));
-
-  // Fetch leaderboard data
   useEffect(() => {
     const subjectParam = subject === "Overall" ? null : subject;
     setLoading(true);
@@ -69,7 +35,6 @@ export default function LeaderDashboardPage({
       .finally(() => setLoading(false));
   }, [subject, user]);
 
-  // Placeholder fallback for missing entries
   const totalSlots = 10;
   const placeholders = Array.from(
     { length: Math.max(0, totalSlots - leaders.length) },
@@ -81,181 +46,162 @@ export default function LeaderDashboardPage({
       imageUrl: null,
     })
   );
-
   const displayList = [...leaders.slice(0, totalSlots), ...placeholders].slice(
     0,
     totalSlots
   );
 
+  const rankStyles = [
+    "bg-gradient-to-br from-yellow-400 via-yellow-500 to-amber-700 shadow-yellow-400/50",
+    "bg-gradient-to-br from-gray-400 via-gray-500 to-gray-700 shadow-gray-400/50",
+    "bg-gradient-to-br from-amber-700 via-orange-700 to-orange-900 shadow-orange-600/50",
+  ];
+
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30, scale: 0.9 },
+    visible: (i) => ({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: { delay: i * 0.07, type: "spring", stiffness: 80 },
+    }),
+  };
+
+  const getScale = (idx) => {
+    if (idx === 0) return "scale-110 z-10";
+    if (idx === 1) return "scale-105";
+    if (idx === 2) return "scale-102";
+    return "";
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen p-4">
-      <div
-        className="relative flex flex-col justify-between rounded-3xl shadow-xl p-6"
-        style={{
-          backgroundColor: theme.surface,
-          width: containerWidth,
-          height: containerHeight,
-        }}
-      >
-        {/* Loader overlay */}
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-3xl z-10">
-            <Loader message="Loading ..." center size={42} />
-          </div>
-        )}
-
-        {/* Error message */}
-        {!loading && error && (
-          <div className="flex flex-col items-center justify-center py-5">
-            <p className="text-red-500 font-medium">
-              Error loading leaderboard
-            </p>
-            <p className="text-xs text-gray-500 mt-1">{error.message}</p>
-          </div>
-        )}
-
-        {/* Main content */}
-        <div
-          className={`flex-1 flex flex-col items-center justify-center transition-opacity ${
-            loading ? "opacity-30 pointer-events-none" : ""
-          }`}
-        >
-          {/* Title */}
-          <p
-            className="text-xl sm:text-2xl md:text-3xl font-semibold text-center mb-2"
-            style={{ color: theme.primary }}
+    <AnimatedPageWrapper
+      title={`Top 10 Scorers — ${subject}`}
+      subtitle="Minimum 3 attempts and securing more than 40%"
+      onBack={onBack}
+    >
+      {/* Subject Selector */}
+      <div className="flex flex-wrap justify-center gap-2 mb-10">
+        {SUBJECTS.map(({ label, value }) => (
+          <button
+            key={value}
+            onClick={() => setSubject(value)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border
+              ${
+                subject === value
+                  ? "bg-indigo-500 text-white border-indigo-400 shadow-md"
+                  : "bg-slate-700 text-slate-300 border-slate-600 hover:bg-slate-600"
+              }`}
           >
-            Top 10 Scorers — {subject}
-          </p>
-
-          {/* Clarification subtitle */}
-          <p
-            className="text-sm sm:text-base md:text-lg text-center font-medium mb-6"
-            style={{ color: theme.textPrimary, opacity: 0.85 }}
-          >
-            Minimum 3 attempts and securing more than 40%
-          </p>
-
-          {/* Leaderboard grid */}
-          <div className="w-full flex-1 flex items-center justify-center">
-            <div
-              className="
-                grid justify-items-center content-center
-                gap-3 sm:gap-4 md:gap-5
-                grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6
-              "
-            >
-              {displayList.map((u, idx) => {
-                const isPlaceholder = !u.avgAccuracy;
-                const displayName = isPlaceholder
-                  ? ""
-                  : (
-                      u.fullName?.trim() ||
-                      (u.email ? u.email.split("@")[0] : "Anonymous")
-                    ).split("@")[0];
-
-                // Glow for top ranks
-                let glowColor;
-                if (idx === 0) glowColor = "rgba(255, 215, 0, 0.8)"; // gold
-                else if (idx === 1)
-                  glowColor = "rgba(192, 192, 192, 0.7)"; // silver
-                else if (idx === 2)
-                  glowColor = "rgba(205, 127, 50, 0.7)"; // bronze
-                else glowColor = `${theme.background}55`;
-
-                return (
-                  <div
-                    key={u.userId}
-                    className={`flex flex-col items-center p-2 rounded-xl transition ${
-                      isPlaceholder ? "opacity-50" : ""
-                    }`}
-                  >
-                    <div
-                      className="rounded-full border mt-1 mb-2 flex items-center justify-center overflow-hidden"
-                      style={{
-                        width: imgWidth,
-                        height: imgWidth,
-                        borderColor: theme.primary,
-                        boxShadow: `0 0 12px 3px ${glowColor}`,
-                        backgroundColor: "#fff",
-                      }}
-                    >
-                      {u.imageUrl ? (
-                        <img
-                          src={u.imageUrl}
-                          alt={displayName}
-                          className="object-cover"
-                          style={{
-                            width: imgWidth - 4,
-                            height: imgWidth - 4,
-                            borderRadius: "50%",
-                          }}
-                        />
-                      ) : (
-                        <span
-                          style={{
-                            fontSize: textFontSize * 1.2,
-                            color: theme.textPrimary,
-                          }}
-                        >
-                          {idx + 1}
-                        </span>
-                      )}
-                    </div>
-
-                    <p
-                      className="text-center font-semibold leading-tight"
-                      style={{
-                        color: theme.textPrimary,
-                        fontSize: textFontSize,
-                      }}
-                    >
-                      {displayName || ""}
-                    </p>
-                    <p
-                      className="text-center font-semibold leading-tight"
-                      style={{
-                        color: theme.textPrimary,
-                        fontSize: textFontSize * 0.8,
-                      }}
-                    >
-                      {isPlaceholder ? "" : `${u.avgAccuracy.toFixed(1)}%`}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Subject Selector (at bottom) */}
-        <div className="flex flex-wrap justify-center gap-1 mt-2 pb-2">
-          {SUBJECTS.map(({ label, value }) => (
-            <label
-              key={value}
-              className="flex items-center gap-2 cursor-pointer px-1 py-1 rounded-full border transition-all"
-              style={{
-                backgroundColor:
-                  subject === value ? theme.primary : theme.surface,
-                borderColor:
-                  subject === value ? theme.primary : theme.greydisabled,
-                color:
-                  subject === value ? theme.textSecondary : theme.textPrimary,
-              }}
-            >
-              <input
-                type="radio"
-                name="subject"
-                value={value}
-                checked={subject === value}
-                onChange={() => setSubject(value)}
-                className="hidden"
-              />
-              <span className="text-xs font-normal">{label}</span>
-            </label>
-          ))}
-        </div>
+            {label}
+          </button>
+        ))}
       </div>
-    </div>
+
+      {/* Loader */}
+      {loading && (
+        <div className="flex items-center justify-center py-16">
+          <Loader message="" size={48} />
+        </div>
+      )}
+
+      {/* Error */}
+      {!loading && error && (
+        <div className="flex flex-col items-center text-red-400 py-10">
+          <p className="font-semibold text-lg">Error loading leaderboard</p>
+          <p className="text-sm text-slate-400 mt-1">{error.message}</p>
+        </div>
+      )}
+
+      {/* Leaderboard Grid */}
+      {!loading && !error && (
+        <AnimatePresence mode="popLayout">
+          <div
+            className="
+              grid gap-6
+              grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+              justify-items-center px-4 sm:px-0
+            "
+          >
+            {displayList.map((u, idx) => {
+              const isPlaceholder = !u.avgAccuracy;
+              const name =
+                !isPlaceholder &&
+                (u.fullName?.trim() ||
+                  (u.email ? u.email.split("@")[0] : "Anonymous"));
+
+              const rankStyle =
+                idx < 3
+                  ? `${rankStyles[idx]} text-white`
+                  : "bg-slate-800 text-slate-200 border border-slate-700";
+
+              const crownColor =
+                idx === 0
+                  ? "text-yellow-300"
+                  : idx === 1
+                  ? "text-gray-200"
+                  : idx === 2
+                  ? "text-amber-400"
+                  : "";
+
+              return (
+                <motion.div
+                  key={u.userId}
+                  custom={idx}
+                  initial="hidden"
+                  animate="visible"
+                  variants={cardVariants}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className={`relative flex flex-col items-center justify-center
+                    p-4 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1
+                    transition-all duration-300 w-full max-w-[170px]
+                    ${rankStyle} ${getScale(idx)}`}
+                >
+                  {/* Rank badge */}
+                  <div className="absolute -top-3 right-3 bg-black/40 backdrop-blur-md px-2 py-0.5 rounded-full text-xs text-white">
+                    #{idx + 1}
+                  </div>
+
+                  {/* Crown for top 3 */}
+                  {idx < 3 && (
+                    <Crown
+                      className={`absolute -top-5 left-1/2 -translate-x-1/2 ${crownColor}`}
+                      size={20}
+                    />
+                  )}
+
+                  {/* Avatar */}
+                  <div className="w-16 h-16 mb-3 rounded-full overflow-hidden border-2 border-slate-600 flex items-center justify-center bg-white/10">
+                    {u.imageUrl ? (
+                      <img
+                        src={u.imageUrl}
+                        alt={name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-lg font-bold text-slate-200">
+                        {idx + 1}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Name */}
+                  <p className="text-center font-semibold truncate w-full">
+                    {isPlaceholder ? "—" : name}
+                  </p>
+
+                  {/* Score */}
+                  {!isPlaceholder && (
+                    <p className="text-center text-sm text-slate-200 mt-1">
+                      {u.avgAccuracy.toFixed(1)}%
+                    </p>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+        </AnimatePresence>
+      )}
+    </AnimatedPageWrapper>
   );
 }

@@ -4,8 +4,8 @@ const theme = {
     primary: "#6A1B9A",      // indigo - main interactive color
     primaryHover: '#4338CA', // darker indigo for hover states
     accent: '#10B981',       // emerald - for highlights/success
-    textPrimary: '#6A1B9A',  // dark gray for main text
-    textSecondary: '#ffffff',// medium gray for secondary text
+    textPrimary: "#94a3b8", // text-slate-400
+    textSecondary: "#64748b", // text-slate-500
     border: '#E5E7EB',       // soft border gray
     error: '#EF4444',        // red for errors/wrong answers
     disabled: "#BA68C8",  
